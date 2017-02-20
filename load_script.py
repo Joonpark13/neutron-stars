@@ -142,12 +142,15 @@ def main():
         'metallicity': ['02', '002']
     }
     dir_name = 'N{0}K_r{1}_Z{2}_1'.format(
-        params['star_num'][0],
+        params['star_num'][1],
         params['rad'][0],
-        params['metallicity'][1]
+        params['metallicity'][0]
     )
 
-    data_dir = os.path.join('data', dir_name)
+    data_dir = os.path.join(
+        '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2',
+        dir_name
+    )
 
     load_neutron_stars(data_dir, dir_name)
 
