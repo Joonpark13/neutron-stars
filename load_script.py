@@ -133,7 +133,7 @@ def load_neutron_stars(run_dir, run_name):
     client = MongoClient()
     db = client.neutron_stars
     collection = db[run_name]
-    collection.insert_many(parse_run(run_dir))
+    collection.insert_many(parse_run(os.path.join(run_dir, run_name)))
 
 def main():
     params = {
@@ -147,10 +147,7 @@ def main():
         params['metallicity'][0]
     )
 
-    data_dir = os.path.join(
-        '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2',
-        dir_name
-    )
+    data_dir = '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2'
 
     load_neutron_stars(data_dir, dir_name)
 
