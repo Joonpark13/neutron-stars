@@ -34,7 +34,14 @@ def parse_sev(sev_name):
             if int(data_line[0]) == -1000: # -1000 is sentinel value indicating EOF
                 break
             try:
-                stars.append({ 'id': int(data_line[0]), 'type': int(data_line[1]) })
+                stars.append({
+                    'id': int(data_line[0]),
+                    'type': int(data_line[1]),
+                    'mass': float(data_line[2]),
+                    'luminosity': float(data_line[3]),
+                    'radius': float(data_line[4]),
+                    'spin': float(data_line[12])
+                })
             # In case the sev file is incorrectly formatted
             except ValueError:
                 print "Incorrectly formatted sev file detected. Ignoring incorrecty formatted data from:"
@@ -258,7 +265,7 @@ def load_neutron_stars(run_dir, run_name):
 
 def main():
     params = {
-        'star_num': [10, 20, 40, 80, 160],
+        'star_num': [10, 20, 40],
         'rad': [26],
         'metallicity': ['02', '002']
     }
