@@ -12,7 +12,11 @@ def parse_sev(sev_name):
         'stars': [
             {
                 'id': int,
-                'type': int
+                'type': int,
+                'mass': float,
+                'luminosity': float,
+                'radius': float,
+                'spin': float
             }, ...
         ]
     }
@@ -60,7 +64,21 @@ def parse_bev(bev_name):
             {
                 'id': int,
                 'type': int,
-                'binary_id': int
+                'mass': float,
+                'radius': float,
+                'luminosity': float,
+                'spin': float,
+                'period': float,
+                'eccentricity': float,
+                'semimajor': float,
+                'companion': {
+                    'id': int,
+                    'type': int,
+                    'mass': float,
+                    'radius': float,
+                    'luminosity': float,
+                    'spin': float
+                }
             }, ...
         ]
     }
@@ -78,9 +96,45 @@ def parse_bev(bev_name):
             if int(data_line[0]) == -1000: # -1000 is the sentinel value indicating EOF
                 break
             # For the first star:
-            stars.append({ 'id': int(data_line[0]), 'type': int(data_line[2]), 'binary_id': int(data_line[1]) })
+            stars.append({
+                'id': int(data_line[0]),
+                'type': int(data_line[2]),
+                'mass': float(data_line[7]),
+                'radius': float(data_line[11]),
+                'luminosity': float(data_line[9]),
+                'spin': float(data_line[21]),
+                'period': float(data_line[5]),
+                'eccentricity': float(data_line[4]),
+                'semimajor': float(data_line[6]),
+                'companion': {
+                    'id': int(data_line[1]),
+                    'type': int(data_line[3]),
+                    'mass': float(data_line[8]),
+                    'radius': float(data_line[12]),
+                    'luminosity': float(data_line[10]),
+                    'spin': float(data_line[22])
+                }
+            })
             # For the second star:
-            stars.append({ 'id': int(data_line[1]), 'type': int(data_line[3]), 'binary_id': int(data_line[0]) })
+            stars.append({
+                'id': int(data_line[1]),
+                'type': int(data_line[3]),
+                'mass': float(data_line[8]),
+                'radius': float(data_line[12]),
+                'luminosity': float(data_line[10]),
+                'spin': float(data_line[22]),
+                'period': float(data_line[5]),
+                'eccentricity': float(data_line[4]),
+                'semimajor': float(data_line[6]),
+                'companion': {
+                    'id': int(data_line[0]),
+                    'type': int(data_line[2]),
+                    'mass': float(data_line[7]),
+                    'radius': float(data_line[11]),
+                    'luminosity': float(data_line[9]),
+                    'spin': float(data_line[21])
+                }
+            })
 
     print 'parsed ' + bev_name
 
@@ -124,6 +178,10 @@ def parse_save(save_dir):
                 {
                     'time': float,
                     'type': int,
+                    'mass': float,
+                    'luminosity': float,
+                    'radius': float,
+                    'spin': float,
                     'binary': bool,
                     'binary_id': int or None
                 }, ...
@@ -136,26 +194,27 @@ def parse_save(save_dir):
     files = os.path.join(save_dir, 'sev.83_*')
 
     stars = []
+
     for filename in glob.glob(files): # For each sev file:
         sev_data = parse_sev(filename)
         for star in sev_data['stars']:
             matching_star = filter(lambda x: x['id'] == star['id'], stars)
+            star_data = {
+                'time': sev_data['time'],
+                'type': star['type'],
+                'mass': star['mass'],
+                'luminosity': star['luminosity'],
+                'radius': star['radius'],
+                'spin': star['spin'],
+                'binary': False,
+                'binary_id': None
+            }
             if matching_star: # If this star has already been found and initialized
-                matching_star[0]['data'].append({
-                    'time': sev_data['time'],
-                    'type': star['type'],
-                    'binary': False,
-                    'binary_id': None
-                })
+                matching_star[0]['data'].append(star_data)
             else: # If not, initialize star
                 stars.append({
                     'id': star['id'],
-                    'data': [{
-                        'time': sev_data['time'],
-                        'type': star['type'],
-                        'binary': False,
-                        'binary_id': None
-                    }],
+                    'data': [star_data],
                     'escape': None
                 })
 
@@ -165,22 +224,25 @@ def parse_save(save_dir):
         bev_data = parse_bev(filename)
         for star in bev_data['stars']:
             matching_star = filter(lambda x: x['id'] == star['id'], stars)
+            star_data = {
+                'time': bev_data['time'],
+                'type': star['type'],
+                'mass': star['mass'],
+                'radius': star['radius'],
+                'luminosity': star['luminosity'],
+                'spin': star['spin'],
+                'period': star['period'],
+                'eccentricity': star['eccentricity'],
+                'semimajor': star['semimajor'],
+                'companion': star['companion'],
+                'binary': True
+            }
             if matching_star:
-                matching_star[0]['data'].append({
-                    'time': bev_data['time'],
-                    'type': star['type'],
-                    'binary': True,
-                    'binary_id': star['binary_id']
-                })
+                matching_star[0]['data'].append(star_data)
             else:
                 stars.append({
                     'id': star['id'],
-                    'data': [{
-                        'time': bev_data['time'],
-                        'type': star['type'],
-                        'binary': True,
-                        'binary_id': star['binary_id']
-                    }],
+                    'data': [star_data],
                     'escape': None
                 })
 
@@ -238,10 +300,11 @@ def parse_run(run_dir):
         else:
             # Check for overlap
             for star in data:
-                existing = filter(lambda x: x['id'] == star['id'], stars)[0]
+                existing = filter(lambda x: x['id'] == star['id'], stars)
                 if not existing:
                     stars.append(star)
                 else:
+                    existing = existing[0]
                     old = existing['data']
                     new = star['data']
                     start_time = min([x['time'] for x in new])
@@ -264,20 +327,23 @@ def load_neutron_stars(run_dir, run_name):
     collection.insert_many(parse_run(os.path.join(run_dir, run_name)))
 
 def main():
+    data_dir = '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2'
+
     params = {
         'star_num': [10, 20, 40],
         'rad': [26],
         'metallicity': ['02', '002']
     }
-    dir_name = 'N{0}K_r{1}_Z{2}_1'.format(
+
+    dir_name = 'N{0}K_r{1}_Z{2}_{3}'.format(
         params['star_num'][0],
         params['rad'][0],
-        params['metallicity'][0]
+        params['metallicity'][0],
+        2
     )
-
-    data_dir = '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2'
-
     load_neutron_stars(data_dir, dir_name)
+
 
 if __name__== "__main__":
     main()
+
