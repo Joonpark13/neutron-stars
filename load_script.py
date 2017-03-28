@@ -339,7 +339,7 @@ def main():
         params['star_num'][0],
         params['rad'][0],
         params['metallicity'][0],
-        2
+        3
     )
     load_neutron_stars(data_dir, dir_name)
 
