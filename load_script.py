@@ -24,14 +24,18 @@ def parse_sev(sev_name):
 
     stars = []
     with open(sev_name, 'r') as f:
+        # First line (header)
         row = f.readline().split()
-
-        # Physical time is the second item in the first line
         physical_time = float(row[1])
+        cluster_singles = int(row[0])
 
-        # Skip the header
-        for _ in range(2):
-            next(f)
+        # Second line (header)
+        row = f.readline().split()
+        core_stars = int(row[0])
+        core_radius = float(row[1])
+
+        # Skip the last line of header
+        next(f)
 
         for line in f:
             data_line = line.split()
@@ -53,7 +57,13 @@ def parse_sev(sev_name):
 
     print 'parsed ' + sev_name
 
-    return { "time": physical_time, "stars": stars }
+    return {
+        "time": physical_time,
+        'cluster_singles': cluster_singles,
+        'core_stars': core_stars,
+        'core_radius': core_radius,
+        "stars": stars
+    }
 
 def parse_bev(bev_name):
     """Takes in a bev file address and returns the physical time and a list of stars
@@ -326,6 +336,11 @@ def load_neutron_stars(run_dir, run_name):
     collection = db[run_name]
     collection.insert_many(parse_run(os.path.join(run_dir, run_name)))
 
+def test_parse_sev(sev_file):
+    result = parse_sev(sev_file)
+    del result['stars']
+    print result
+
 def main():
     data_dir = '/projects/b1011/ageller/NBODY6ppGPU/Nbody6ppGPU-newSE/run/RgSun_NZgrid_BHFLAG2'
 
@@ -339,9 +354,12 @@ def main():
         params['star_num'][0],
         params['rad'][0],
         params['metallicity'][0],
-        3
+        1
     )
-    load_neutron_stars(data_dir, dir_name)
+
+    test_parse_sev(os.path.join(data_dir, dir_name, 'save01', 'sev.83_0.000'))
+
+    # load_neutron_stars(data_dir, dir_name)
 
 
 if __name__== "__main__":
